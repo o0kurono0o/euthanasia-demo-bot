@@ -8,7 +8,7 @@ oauth = None
 
 def init():
     res = ssm_client.get_parameter(
-        Name='/credentials/twitter/kuronoSub/demo-bot',
+        Name='/credentials/twitter/kuronoSub/euthanasia-demo-bot',
         WithDecryption=True
     )
     params = json.loads(res['Parameter']['Value'])
