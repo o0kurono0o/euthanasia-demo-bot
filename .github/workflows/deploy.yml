@@ -24,13 +24,18 @@ jobs:
       - name: Get caller identity
         run: aws sts get-caller-identity
 
-      - name: Setup python
+      - name: Setup Python
         uses: actions/setup-python@v3
         with:
           python-version: '3.9'
 
+      - name: Install dependencies
+        run: |
+          pip3 install -U pip
+          pip install -r requirements.txt -t src/
+
       - name: Update ASW Lambda
         run: |
-          pip3 install awscli
+          pip install awscli
           cd src && zip -r package.zip ./*
           aws lambda update-function-code --function-name euthanasia-demo-bot --zip-file fileb://package.zip --publish
