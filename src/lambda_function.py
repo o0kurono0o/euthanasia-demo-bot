@@ -3,8 +3,11 @@ from requests_oauthlib import OAuth1Session
 import boto3
 import requests
 import urllib.parse
+from io import BytesIO
+import time
 
 SCRAPBOX_API_ROOT = 'https://scrapbox.io/api'
+TWITTER_MEDIA_API_ROOT = 'https://upload.twitter.com/1.1/media'
 
 ssm_client = boto3.client('ssm')
 
@@ -71,6 +74,80 @@ def fetchData():
     for page in pages:
         res = requests.get(page.image)
         images.append(handle_error(res).content)
+
+    # Twitterに画像をアップロードし、メディアIDを取得する
+    media_ids = []
+    for image in images:
+        media_ids.append(upload_to_twitter(image))
+
+def upload_to_twitter(image):
+    # ファイルを分割してアップロードする
+    url = f'{TWITTER_MEDIA_API_ROOT}/upload.json'
+    total_byte = len(image)
+
+    res = requests.post(url=url, data = {
+        'command': 'INIT',
+        'total_byte': total_byte,
+        'media_type': 'image/png',
+    })
+    media_id = handle_error(res).json()['media_id']
+    print(f'Media ID: {media_id}')
+
+    segment_id = 0
+    bytes_sent = 0
+    file = BytesIO(image)
+
+    while (bytes_sent < total_byte):
+        res = requests.post(url=url,
+            data={
+            'command': 'APPEND',
+            'media_id': media_id,
+            'segment_index': segment_id,
+            },
+            files={
+                'media': file.read(4*1024*1024),
+            }
+        )
+        handle_error(res)
+
+        segment_id += 1
+        bytes_sent = file.tell()
+    print('Upload chunks complete.')
+
+    res = requests.post(url=url, data={
+        'command': 'FINALIZE',
+        'media_id': media_id,
+    })
+
+    check_status(
+        handle_error(res).json().get('processing_info', None),
+        url,
+        media_id
+    )
+
+    return media_id
+
+def check_status(processing_info, url, media_id):
+    if (processing_info is None):
+        return
+    
+    state = processing_info['state']
+    if (state == 'succeeded'):
+        return
+    if (state == 'failed'):
+        raise Exception('Failed to upload image to Twitter.')
+
+    check_after_secs = processing_info['check_after_secs']
+    
+    print(f'Checking after {check_after_secs} seconds')
+    time.sleep(check_after_secs)
+    
+    res = requests.get(url=url, data={
+        'command': 'STATUS',
+        'media_id': media_id
+    })
+    processing_info = handle_error(res).json().get('processing_info', None)
+    check_status(processing_info, url, media_id)
 
 def tweet(text):
     payload = {'text': text}
