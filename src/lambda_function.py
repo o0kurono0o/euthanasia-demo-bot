@@ -112,7 +112,7 @@ def upload_to_twitter(image):
         'total_bytes': total_bytes,
         'media_type': 'image/png',
     })
-    media_id = handle_error(res).json()['media_id']
+    media_id = handle_error(res).json()['media_id_string']
     print(f'Media ID: {media_id}')
 
     print('APPEND')
