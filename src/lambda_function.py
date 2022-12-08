@@ -47,7 +47,11 @@ def lambda_handler(event, context):
         print(f'media_id: {media_id}')
 
 def handle_error(res):
-    res.raise_for_status()
+    try:
+        res.raise_for_status()
+    except requests.HTTPError as e:
+        print(res.json())
+        raise e
     return res
 
 def fetchData():
