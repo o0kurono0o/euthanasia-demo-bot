@@ -1,6 +1,10 @@
 import json
 from requests_oauthlib import OAuth1Session
 import boto3
+import requests
+import urllib.parse
+
+SCRAPBOX_API_ROOT = 'https://scrapbox.io/api'
 
 ssm_client = boto3.client('ssm')
 
@@ -31,6 +35,42 @@ init()
 def lambda_handler(event, context):
     text = '#国は安楽死を認めてください'
     tweet(text)
+
+def handle_error(res):
+    status = res.status_code
+    if (200 <= status < 400):
+        return res
+    else:
+        res.raise_for_status()
+
+def fetchData():
+    # 安楽死コラージュのページ一覧を取得する
+    pages = []
+    skip = 0
+
+    while (True):
+        params = urllib.parse.urlencode({
+            'sort': 'created',
+            'skip': skip,
+        })
+        
+        res = requests.get(
+            url=f'{SCRAPBOX_API_ROOT}/pages/euthanasia-collage?{params}'
+        )
+        json = handle_error(res).json()
+        for page in json['pages']:
+            if (page.pin == 0):
+                pages.append(page)
+
+        skip += len(json['pages'])
+        if (len(json['pages']) < 100):
+            break
+
+    # 画像をダウンロードする
+    images = []
+    for page in pages:
+        res = requests.get(page.image)
+        images.append(handle_error(res).content)
 
 def tweet(text):
     payload = {'text': text}
