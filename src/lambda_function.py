@@ -75,7 +75,7 @@ def fetchData():
     # 画像をダウンロードする
     images = []
     for page in pages:
-        res = requests.get(page.image)
+        res = requests.get(page['image'])
         images.append(handle_error(res).content)
 
     # Twitterに画像をアップロードし、メディアIDを取得する
