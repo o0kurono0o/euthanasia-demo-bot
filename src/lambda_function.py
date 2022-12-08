@@ -65,7 +65,7 @@ def fetchData():
         )
         json = handle_error(res).json()
         for page in json['pages']:
-            if (page.pin == 0):
+            if (page['pin'] == 0): # ピン留めされていない場合
                 pages.append(page)
 
         skip += len(json['pages'])
