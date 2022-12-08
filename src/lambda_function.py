@@ -186,7 +186,7 @@ def check_status(processing_info, url, media_id):
 def tweet(text, media_ids = []):
     res = oauth.post(
         f'{TWITTER_API_V2_ROOT}/tweets',
-        data={
+        json={
             'text': text,
             'media': {
                 'media_ids': media_ids,
