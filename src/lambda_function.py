@@ -7,10 +7,10 @@ from io import BytesIO
 import time
 
 SCRAPBOX_API_ROOT = 'https://scrapbox.io/api'
+TWITTER_API_V2_ROOT = 'https://api.twitter.com/2'
 TWITTER_MEDIA_API_ROOT = 'https://upload.twitter.com/1.1/media'
 
 ssm_client = boto3.client('ssm')
-
 oauth = None
 
 def init():
@@ -37,7 +37,10 @@ init()
 
 def lambda_handler(event, context):
     text = '#国は安楽死を認めてください'
-    tweet(text)
+    media_ids = fetchData()
+
+    for media_id in media_ids:
+        tweet(text, media_id)
 
 def handle_error(res):
     status = res.status_code
@@ -79,6 +82,8 @@ def fetchData():
     media_ids = []
     for image in images:
         media_ids.append(upload_to_twitter(image))
+
+    return media_ids
 
 def upload_to_twitter(image):
     # ファイルを分割してアップロードする
@@ -149,13 +154,16 @@ def check_status(processing_info, url, media_id):
     processing_info = handle_error(res).json().get('processing_info', None)
     check_status(processing_info, url, media_id)
 
-def tweet(text):
-    payload = {'text': text}
+def tweet(text, media_id = None):
+    media_ids = [] if media_id is None else [str(media_id)]
+
     res = oauth.post(
-        'https://api.twitter.com/2/tweets',
-        json=payload
+        f'{TWITTER_API_V2_ROOT}/tweets',
+        data={
+            'text': text,
+            'media': {
+                'media_ids': media_ids,
+            },
+        }
     )
-    if res.status_code != 201:
-        raise Exception(
-            '[Error] {} {}'.format(res.status_code, res.text)
-        )
+    handle_error(res)
