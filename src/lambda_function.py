@@ -40,7 +40,7 @@ def lambda_handler(event, context):
     media_ids = fetchData()
 
     for media_id in media_ids:
-        tweet(text, media_id)
+        tweet(text, [media_id])
 
         print('tweet complete.')
         print(f'text: {text}')
@@ -183,9 +183,7 @@ def check_status(processing_info, url, media_id):
     processing_info = handle_error(res).json().get('processing_info', None)
     check_status(processing_info, url, media_id)
 
-def tweet(text, media_id = None):
-    media_ids = [] if media_id is None else [str(media_id)]
-
+def tweet(text, media_ids = []):
     res = oauth.post(
         f'{TWITTER_API_V2_ROOT}/tweets',
         data={
