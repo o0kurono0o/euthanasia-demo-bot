@@ -47,11 +47,8 @@ def lambda_handler(event, context):
         print(f'media_id: {media_id}')
 
 def handle_error(res):
-    status = res.status_code
-    if (200 <= status < 400):
-        return res
-    else:
-        res.raise_for_status()
+    res.raise_for_status()
+    return res
 
 def fetchData():
     # 安楽死コラージュのページ一覧を取得する
