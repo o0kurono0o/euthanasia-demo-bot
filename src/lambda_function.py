@@ -103,7 +103,7 @@ def upload_to_twitter(image):
 
     print('INIT')
 
-    res = requests.post(url=url, data = {
+    res = oauth.post(url=url, data={
         'command': 'INIT',
         'total_bytes': total_bytes,
         'media_type': 'image/png',
@@ -118,7 +118,7 @@ def upload_to_twitter(image):
     file = BytesIO(image)
 
     while (bytes_sent < total_bytes):
-        res = requests.post(url=url,
+        res = oauth.post(url=url,
             data={
             'command': 'APPEND',
             'media_id': media_id,
@@ -139,7 +139,7 @@ def upload_to_twitter(image):
 
     print('FINALIZE')
 
-    res = requests.post(url=url, data={
+    res = oauth.post(url=url, data={
         'command': 'FINALIZE',
         'media_id': media_id,
     })
@@ -172,7 +172,7 @@ def check_status(processing_info, url, media_id):
     
     print('STATUS')
 
-    res = requests.get(url=url, data={
+    res = oauth.get(url=url, data={
         'command': 'STATUS',
         'media_id': media_id
     })
