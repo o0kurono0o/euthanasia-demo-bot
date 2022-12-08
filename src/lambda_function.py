@@ -42,6 +42,10 @@ def lambda_handler(event, context):
     for media_id in media_ids:
         tweet(text, media_id)
 
+        print('tweet complete.')
+        print(f'text: {text}')
+        print(f'media_id: {media_id}')
+
 def handle_error(res):
     status = res.status_code
     if (200 <= status < 400):
@@ -65,44 +69,58 @@ def fetchData():
         )
         json = handle_error(res).json()
         for page in json['pages']:
-            if (page['pin'] == 0): # ピン留めされていない場合
+            if (page['pin'] == 0 and page['image']):
                 pages.append(page)
 
-        skip += len(json['pages'])
-        if (len(json['pages']) < 100):
+        cnt = len(json['pages'])
+
+        print(f'{cnt} of {json["count"]} pages fetched from Scrapbox.')
+
+        skip += cnt
+        if (cnt < 100):
             break
 
-    # 画像をダウンロードする
+    # 画像を取得する
     images = []
     for page in pages:
         res = requests.get(page['image'])
         images.append(handle_error(res).content)
+
+        print(f'{page["image"]} fetched.')
+    
+    print('Fetch images from Scrapbox complete.')
 
     # Twitterに画像をアップロードし、メディアIDを取得する
     media_ids = []
     for image in images:
         media_ids.append(upload_to_twitter(image))
 
+    print('Upload images to Twitter complete.')
+
     return media_ids
 
 def upload_to_twitter(image):
     # ファイルを分割してアップロードする
     url = f'{TWITTER_MEDIA_API_ROOT}/upload.json'
-    total_byte = len(image)
+    total_bytes = len(image)
+
+    print('INIT')
 
     res = requests.post(url=url, data = {
         'command': 'INIT',
-        'total_byte': total_byte,
+        'total_bytes': total_bytes,
         'media_type': 'image/png',
     })
     media_id = handle_error(res).json()['media_id']
     print(f'Media ID: {media_id}')
 
+    print('APPEND')
+
     segment_id = 0
     bytes_sent = 0
     file = BytesIO(image)
 
-    while (bytes_sent < total_byte):
+    while (bytes_sent < total_bytes):
         res = requests.post(url=url,
             data={
             'command': 'APPEND',
@@ -117,7 +135,12 @@ def upload_to_twitter(image):
 
         segment_id += 1
         bytes_sent = file.tell()
+
+        print(f'{bytes_sent} of {total_bytes} bytes uploaded.')
+
     print('Upload chunks complete.')
+
+    print('FINALIZE')
 
     res = requests.post(url=url, data={
         'command': 'FINALIZE',
@@ -137,6 +160,9 @@ def check_status(processing_info, url, media_id):
         return
     
     state = processing_info['state']
+
+    print(f'Media processing status is {state}.')
+
     if (state == 'succeeded'):
         return
     if (state == 'failed'):
@@ -147,6 +173,8 @@ def check_status(processing_info, url, media_id):
     print(f'Checking after {check_after_secs} seconds')
     time.sleep(check_after_secs)
     
+    print('STATUS')
+
     res = requests.get(url=url, data={
         'command': 'STATUS',
         'media_id': media_id
