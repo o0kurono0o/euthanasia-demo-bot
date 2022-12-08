@@ -88,6 +88,7 @@ def fetchData():
         images.append(handle_error(res).content)
 
         print(f'{page["image"]} fetched.')
+    images.reverse()
     
     print('Fetch images from Scrapbox complete.')
 
