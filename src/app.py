@@ -42,7 +42,7 @@ class App:
     return res
 
   def fetchData(self):
-    # 安楽死コラージュのページ一覧を取得する
+    # Fetch all pages from Scrapbox
     pages = []
     skip = 0
 
@@ -68,7 +68,7 @@ class App:
         if (cnt < 100):
             break
 
-    # 画像を取得する
+    # Fetch images from Scrapbox
     images = []
     for page in pages:
         res = requests.get(page['image'])
@@ -79,14 +79,16 @@ class App:
     
     print('Fetch images from Scrapbox complete.')
 
-    # Twitterに画像をアップロードし、メディアIDを取得する
+    # Upload image to Twitter and get media ID
     for image in images:
         self.media_ids.append(self.upload_to_twitter(image))
 
     print('Upload images to Twitter complete.')
 
   def upload_to_twitter(self, image):
-    # ファイルを分割してアップロードする
+    # Split files and upload them
+    # https://developer.twitter.com/en/docs/twitter-api/v1/media/upload-media/uploading-media/chunked-media-upload
+
     url = f'{App.TWITTER_MEDIA_API_ROOT}/upload.json'
     total_bytes = len(image)
 
