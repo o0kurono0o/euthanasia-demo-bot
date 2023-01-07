@@ -183,7 +183,14 @@ class App:
             },
         }
     )
+
     self.handle_error(res)
+
+    print('\n'.join([
+        'tweet complete',
+        f'  text: {text}',
+        f'  media_ids: {media_ids}',
+    ]))
 
   def run(self):
     self.fetchData()
